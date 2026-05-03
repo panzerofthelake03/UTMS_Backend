@@ -73,9 +73,10 @@ public class YdyoService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Application not found: " + applicationId));
 
-        if (!ApplicationStatus.UNDER_YDYO_REVIEW.equals(application.getStatus())) {
+        if (!ApplicationStatus.UNDER_YDYO_REVIEW.equals(application.getStatus())
+            && !ApplicationStatus.WAITING_EXAM_RESULT.equals(application.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Application must be in UNDER_YDYO_REVIEW status (current: " + application.getStatus() + ")");
+                "Application must be in UNDER_YDYO_REVIEW or WAITING_EXAM_RESULT status (current: " + application.getStatus() + ")");
         }
 
         // Persist YDYO decision in the evaluations row (create if absent)
