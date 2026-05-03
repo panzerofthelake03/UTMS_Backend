@@ -10,9 +10,11 @@ import com.utms.student.Student;
 import com.utms.student.StudentRepository;
 import com.utms.student.dto.StudentDashboardResponse;
 import com.utms.user.User;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.util.List;
@@ -104,6 +106,18 @@ public class ApplicationService {
 
         saveTimeline(application, fromStatus, ApplicationStatus.SUBMITTED, currentUser, "Application submitted");
         return toResponse(application);
+    }
+
+    @Transactional
+    public void deleteDraftApplication(Long applicationId) {
+        Application application = getOwnedApplication(applicationId);
+
+        if (!ApplicationStatus.DRAFT.equals(application.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Only DRAFT applications can be deleted");
+        }
+
+        applicationRepository.delete(application);
     }
 
     @Transactional(readOnly = true)

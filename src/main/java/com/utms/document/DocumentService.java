@@ -1,6 +1,7 @@
 package com.utms.document;
 
 import com.utms.application.Application;
+import com.utms.application.ApplicationStatus;
 import com.utms.application.ApplicationRepository;
 import com.utms.common.security.AuthenticatedUserService;
 import com.utms.common.security.PermissionChecker;
@@ -21,6 +22,7 @@ import java.util.List;
 public class DocumentService {
 
     private static final String PDF_MIME = "application/pdf";
+    private static final String EXAM_RESULT_TYPE = "ENGLISH_PROFICIENCY_EXAM_RESULT";
 
     private final long maxFileSizeBytes;
     private final DocumentRepository documentRepository;
@@ -54,7 +56,7 @@ public class DocumentService {
      *   2. MIME type must be application/pdf
      *   3. File size must not exceed 2 MB
      *   4. Virus scan simulation must return CLEAN
-     *   5. The authenticated user must own the application
+    *   5. Upload is allowed in DRAFT for owner only, or in WAITING_EXAM_RESULT for owner/YDYO
      */
     @Transactional
     public DocumentResponse uploadDocument(Long applicationId,
@@ -66,9 +68,26 @@ public class DocumentService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Application not found: " + applicationId));
 
-        User currentUser = authenticatedUserService.getCurrentUser();
-        if (!permissionChecker.isOwner(application.getStudent().getUser())) {
-            throw new AccessDeniedException("You can only upload documents for your own applications");
+        boolean isOwner = permissionChecker.isOwner(application.getStudent().getUser());
+        boolean isYdyoStaff = permissionChecker.isYdyo() || permissionChecker.isAdmin();
+        boolean isWaitingExamResult = ApplicationStatus.WAITING_EXAM_RESULT.equals(application.getStatus());
+
+        if (isWaitingExamResult) {
+            if (!isOwner && !isYdyoStaff) {
+                throw new AccessDeniedException("Only the owner, YDYO, or admin can upload exam results in WAITING_EXAM_RESULT status");
+            }
+            if (!EXAM_RESULT_TYPE.equals(documentType)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Only ENGLISH_PROFICIENCY_EXAM_RESULT can be uploaded in WAITING_EXAM_RESULT status");
+            }
+        } else {
+            if (!isOwner) {
+                throw new AccessDeniedException("You can only upload documents for your own applications");
+            }
+            if (!ApplicationStatus.DRAFT.equals(application.getStatus())) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Documents can only be uploaded while the application is in DRAFT status");
+            }
         }
 
         // Virus scan simulation
@@ -109,6 +128,48 @@ public class DocumentService {
                 .map(this::toResponse)
                 .toList();
     }
+
+    @Transactional(readOnly = true)
+    public DownloadedDocument downloadDocument(Long applicationId, Long documentId) throws IOException {
+        Document document = getViewableDocument(applicationId, documentId);
+        return new DownloadedDocument(
+                document.getOriginalFilename(),
+                document.getMimeType(),
+                storageService.readAllBytes(document.getStoragePath()));
+    }
+
+    @Transactional
+    public void deleteDocument(Long applicationId, Long documentId) throws IOException {
+        Document document = documentRepository.findByIdAndApplicationId(documentId, applicationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Document not found: " + documentId));
+
+        Application application = document.getApplication();
+        if (!permissionChecker.isOwner(application.getStudent().getUser())) {
+            throw new AccessDeniedException("You can only delete documents from your own applications");
+        }
+
+        if (!ApplicationStatus.DRAFT.equals(application.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Documents can only be deleted while the application is in DRAFT status");
+        }
+
+        storageService.delete(document.getStoragePath());
+        documentRepository.delete(document);
+    }
+
+    private Document getViewableDocument(Long applicationId, Long documentId) {
+        Document document = documentRepository.findByIdAndApplicationId(documentId, applicationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Document not found: " + documentId));
+
+        if (!permissionChecker.canViewApplication(document.getApplication().getStudent().getUser())) {
+            throw new AccessDeniedException("You are not allowed to download this document");
+        }
+        return document;
+    }
+
+    public record DownloadedDocument(String fileName, String mimeType, byte[] content) {}
 
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {

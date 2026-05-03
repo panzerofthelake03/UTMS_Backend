@@ -40,6 +40,22 @@ public class StorageService {
         return applicationId + "/" + uniqueName;
     }
 
+    public byte[] readAllBytes(String storagePath) throws IOException {
+        return Files.readAllBytes(resolveStoredPath(storagePath));
+    }
+
+    public void delete(String storagePath) throws IOException {
+        Files.deleteIfExists(resolveStoredPath(storagePath));
+    }
+
+    private Path resolveStoredPath(String storagePath) {
+        Path resolved = storageRoot.resolve(storagePath).normalize();
+        if (!resolved.startsWith(storageRoot)) {
+            throw new IllegalArgumentException("Invalid storage path");
+        }
+        return resolved;
+    }
+
     private String sanitiseFilename(String filename) {
         if (filename == null) return "upload";
         // Strip path traversal characters

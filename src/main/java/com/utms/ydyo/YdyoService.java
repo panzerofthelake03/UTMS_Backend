@@ -47,7 +47,9 @@ public class YdyoService {
     @Transactional(readOnly = true)
     public List<AdminApplicationResponse> listApplicationsUnderReview() {
         return applicationRepository
-                .findByStatusOrderByCreatedAtAsc(ApplicationStatus.UNDER_YDYO_REVIEW)
+            .findByStatusInOrderByCreatedAtAsc(List.of(
+                ApplicationStatus.UNDER_YDYO_REVIEW,
+                ApplicationStatus.WAITING_EXAM_RESULT))
                 .stream()
                 .map(this::toAdminResponse)
                 .toList();
@@ -57,7 +59,7 @@ public class YdyoService {
      * YDYO reviews the English proficiency document for an application.
      *
      * Decision APPROVED   → status moves to UNDER_YGK_REVIEW
-     * Decision EXAM_REQUIRED → status stays at UNDER_YDYO_REVIEW (student needs language exam)
+    * Decision EXAM_REQUIRED → status moves to WAITING_EXAM_RESULT (waiting for exam outcome)
      */
     @Transactional
     public AdminApplicationResponse reviewEnglishDocument(Long applicationId, EnglishReviewRequest request) {
@@ -97,8 +99,8 @@ public class YdyoService {
             toStatus = ApplicationStatus.UNDER_YGK_REVIEW;
             historyNote = "English document approved by YDYO — forwarded to YGK";
         } else {
-            toStatus = ApplicationStatus.UNDER_YDYO_REVIEW;
-            historyNote = "Language exam required — application remains under YDYO review";
+            toStatus = ApplicationStatus.WAITING_EXAM_RESULT;
+            historyNote = "Language exam required — waiting for exam result";
         }
 
         application.setStatus(toStatus);
