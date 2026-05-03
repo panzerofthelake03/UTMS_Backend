@@ -7,6 +7,7 @@ import com.utms.application.ApplicationStatusHistory;
 import com.utms.application.ApplicationStatusHistoryRepository;
 import com.utms.common.dto.AdminApplicationResponse;
 import com.utms.common.security.AuthenticatedUserService;
+import com.utms.notification.NotificationService;
 import com.utms.student.Student;
 import com.utms.user.User;
 import com.utms.ygk.dto.EvaluationRequest;
@@ -31,17 +32,20 @@ public class YgkService {
     private final EvaluationRepository evaluationRepository;
     private final CompositeScoreService compositeScoreService;
     private final AuthenticatedUserService authenticatedUserService;
+    private final NotificationService notificationService;
 
     public YgkService(ApplicationRepository applicationRepository,
                       ApplicationStatusHistoryRepository statusHistoryRepository,
                       EvaluationRepository evaluationRepository,
                       CompositeScoreService compositeScoreService,
-                      AuthenticatedUserService authenticatedUserService) {
+                      AuthenticatedUserService authenticatedUserService,
+                      NotificationService notificationService) {
         this.applicationRepository = applicationRepository;
         this.statusHistoryRepository = statusHistoryRepository;
         this.evaluationRepository = evaluationRepository;
         this.compositeScoreService = compositeScoreService;
         this.authenticatedUserService = authenticatedUserService;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -129,6 +133,7 @@ public class YgkService {
             historyNote = request.getEvaluatorNote();
         }
         saveHistory(application, fromStatus, toStatus, actor, historyNote);
+        notificationService.createApplicationResultNotification(application, request.getDecision());
 
         return toResponse(evaluation);
     }
