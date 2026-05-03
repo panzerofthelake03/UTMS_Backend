@@ -149,7 +149,7 @@ public class ApplicationService {
     private Student getCurrentStudent() {
         User currentUser = authenticatedUserService.getCurrentUser();
         return studentRepository.findByUserId(currentUser.getId())
-                .orElseThrow(() -> new IllegalStateException("Student profile not found for current user"));
+                .orElseThrow(() -> new AccessDeniedException("Current user does not have a student profile"));
     }
 
     private void saveTimeline(Application application,
