@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: utms-backend
+  profiles:
+    active: dev
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+server:
+  servlet:
+    context-path: /
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:change-me-in-prod-change-me-in-prod}
+      access-token-expiration-minutes: ${JWT_ACCESS_TOKEN_EXPIRATION:60}
+      refresh-token-expiration-days: ${JWT_REFRESH_TOKEN_EXPIRATION_DAYS:7}
+
