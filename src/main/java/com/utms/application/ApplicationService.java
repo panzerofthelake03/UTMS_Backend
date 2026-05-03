@@ -116,6 +116,18 @@ public class ApplicationService {
     }
 
     @Transactional(readOnly = true)
+    public ApplicationResponse getApplication(Long applicationId) {
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new IllegalArgumentException("Application not found: " + applicationId));
+
+        if (!permissionChecker.canViewApplication(application.getStudent().getUser())) {
+            throw new AccessDeniedException("You are not allowed to view this application");
+        }
+
+        return toResponse(application);
+    }
+
+    @Transactional(readOnly = true)
     public List<StatusTimelineItemResponse> getTimeline(Long applicationId) {
         Application application = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new IllegalArgumentException("Application not found: " + applicationId));

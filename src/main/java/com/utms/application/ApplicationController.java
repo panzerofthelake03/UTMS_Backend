@@ -57,6 +57,12 @@ public class ApplicationController {
         return ResponseEntity.ok(ApiResponse.success(applicationService.listMyApplications()));
     }
 
+    @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<ApplicationResponse>> get(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(applicationService.getApplication(id)));
+    }
+
     @GetMapping("/{id}/timeline")
     public ResponseEntity<ApiResponse<List<StatusTimelineItemResponse>>> timeline(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(applicationService.getTimeline(id)));
