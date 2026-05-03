@@ -1,6 +1,7 @@
 package com.utms.common.security;
 
 import com.utms.application.Application;
+import com.utms.application.ApplicationStatus;
 import com.utms.user.User;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -61,6 +62,20 @@ public class PermissionChecker {
      */
     public boolean canViewApplication(User resourceOwner) {
         return isOwner(resourceOwner) || isOidb() || isYdyo() || isYgk() || isAdmin();
+    }
+
+    /**
+     * Student owner can edit only DRAFT applications.
+     */
+    public boolean canEditApplication(User resourceOwner, Application application) {
+        return isOwner(resourceOwner) && ApplicationStatus.DRAFT.equals(application.getStatus());
+    }
+
+    /**
+     * Student owner can submit only DRAFT applications.
+     */
+    public boolean canSubmitApplication(User resourceOwner, Application application) {
+        return isOwner(resourceOwner) && ApplicationStatus.DRAFT.equals(application.getStatus());
     }
 
     /**
