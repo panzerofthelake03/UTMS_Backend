@@ -2,10 +2,13 @@ package com.utms.intibak;
 
 import com.utms.application.Application;
 import com.utms.application.ApplicationRepository;
+import com.utms.application.ApplicationStatus;
+import com.utms.common.dto.AdminApplicationResponse;
 import com.utms.common.security.AuthenticatedUserService;
 import com.utms.intibak.dto.CourseExemptionRequest;
 import com.utms.intibak.dto.CourseExemptionResponse;
 import com.utms.intibak.dto.ExemptionDecisionRequest;
+import com.utms.student.Student;
 import com.utms.user.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -31,6 +34,18 @@ public class IntibakService {
         this.applicationRepository = applicationRepository;
         this.exemptionRepository = exemptionRepository;
         this.authenticatedUserService = authenticatedUserService;
+    }
+
+    /**
+     * Lists all ACCEPTED applications available for Intibak course-exemption review.
+     */
+    @Transactional(readOnly = true)
+    public List<AdminApplicationResponse> listApplicationsForIntibak() {
+        return applicationRepository
+                .findByStatusOrderByCreatedAtAsc(ApplicationStatus.ACCEPTED)
+                .stream()
+                .map(this::toAdminResponse)
+                .toList();
     }
 
     /**
@@ -103,6 +118,27 @@ public class IntibakService {
         return applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Application not found: " + applicationId));
+    }
+
+    private AdminApplicationResponse toAdminResponse(Application app) {
+        Student student = app.getStudent();
+        User user = student.getUser();
+        return new AdminApplicationResponse(
+                app.getId(),
+                app.getStatus(),
+                app.getTerm(),
+                app.getApplicationNote(),
+                app.getSubmittedAt(),
+                app.getCreatedAt(),
+                app.getUpdatedAt(),
+                student.getId(),
+                student.getStudentNumber(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getEmail(),
+                student.getDepartment(),
+                student.getFaculty(),
+                student.getGpa());
     }
 
     private CourseExemptionResponse toResponse(CourseExemption e) {

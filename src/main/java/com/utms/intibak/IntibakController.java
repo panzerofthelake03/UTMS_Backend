@@ -46,7 +46,7 @@ public class IntibakController {
      * Only staff roles can populate this.
      */
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_OIDB') or hasRole('ROLE_YDYO') or hasRole('ROLE_YGK') or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_OIDB') or hasRole('ROLE_YDYO') or hasRole('ROLE_YGK') or hasRole('ROLE_INTIBAK') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<ApiResponse<CourseExemptionResponse>> addExemption(
             @PathVariable Long applicationId,
             @Valid @RequestBody CourseExemptionRequest request) {
@@ -60,7 +60,7 @@ public class IntibakController {
      * Requires a comment to enforce the manual-intervention audit trail.
      */
     @PutMapping("/{id}/decide")
-    @PreAuthorize("hasRole('ROLE_OIDB') or hasRole('ROLE_YDYO') or hasRole('ROLE_YGK') or hasRole('ROLE_ADMIN')")
+    @PreAuthorize("hasRole('ROLE_OIDB') or hasRole('ROLE_YDYO') or hasRole('ROLE_YGK') or hasRole('ROLE_INTIBAK') or hasRole('ROLE_ADMIN')")
     public ResponseEntity<ApiResponse<CourseExemptionResponse>> recordDecision(
             @PathVariable Long applicationId,
             @PathVariable Long id,

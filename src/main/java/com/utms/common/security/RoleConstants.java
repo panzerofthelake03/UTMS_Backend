@@ -9,5 +9,6 @@ public final class RoleConstants {
     public static final String ROLE_OIDB = "ROLE_OIDB";
     public static final String ROLE_YDYO = "ROLE_YDYO";
     public static final String ROLE_YGK = "ROLE_YGK";
+    public static final String ROLE_INTIBAK = "ROLE_INTIBAK";
     public static final String ROLE_ADMIN = "ROLE_ADMIN";
 }
