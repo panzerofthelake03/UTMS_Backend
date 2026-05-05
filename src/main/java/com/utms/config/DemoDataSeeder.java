@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Set;
 
 @Component
@@ -82,16 +83,43 @@ public class DemoDataSeeder implements CommandLineRunner {
     }
 
     private void ensureStudentProfile(User studentUser) {
-        if (studentRepository.findByUserId(studentUser.getId()).isPresent()) {
-            return;
-        }
-
-        Student student = new Student();
+        Student student = studentRepository.findByUserId(studentUser.getId()).orElseGet(Student::new);
         student.setUser(studentUser);
-        student.setStudentNumber("S20260001");
-        student.setDepartment("Computer Engineering");
-        student.setFaculty("Engineering");
-        student.setGpa(new BigDecimal("3.20"));
+        if (student.getStudentNumber() == null) {
+            student.setStudentNumber("S20260001");
+        }
+        if (student.getDepartment() == null) {
+            student.setDepartment("Computer Engineering");
+        }
+        if (student.getFaculty() == null) {
+            student.setFaculty("Engineering");
+        }
+        if (student.getGpa() == null) {
+            student.setGpa(new BigDecimal("3.20"));
+        }
+        if (student.getNationality() == null) {
+            student.setNationality("TURKISH");
+        }
+        if (student.getDateOfBirth() == null) {
+            student.setDateOfBirth(LocalDate.of(2000, 1, 15));
+        }
+        if (student.getIdentityDocumentType() == null) {
+            student.setIdentityDocumentType("TC_ID");
+        }
+        if (student.getTcIdentityNumber() == null) {
+            student.setTcIdentityNumber("10000000001");
+        }
+        if (student.getIdentitySerialNo() == null) {
+            student.setIdentitySerialNo("A12B34567");
+        }
+        if (student.getCurrentProgram() == null) {
+            student.setCurrentProgram("Computer Engineering");
+        }
+        if (student.getCurrentUniversity() == null) {
+            student.setCurrentUniversity("Izmir Institute of Technology");
+        }
+        student.setPassportNumber(null);
+        student.setPassportExpirationDate(null);
         student.setCreatedBy("demo-seed");
         student.setUpdatedBy("demo-seed");
         studentRepository.save(student);

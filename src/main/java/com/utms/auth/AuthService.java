@@ -22,6 +22,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -57,6 +58,7 @@ public class AuthService {
         if (userRepository.existsByEmail(request.email())) {
             throw new ConflictException("Email already registered: " + request.email());
         }
+        validateStudentIdentityFields(request);
 
         Role role = roleRepository.findByName(DEFAULT_ROLE)
                 .orElseThrow(() -> new IllegalStateException("Default role not found in database"));
@@ -70,7 +72,7 @@ public class AuthService {
         user.getRoles().add(role);
 
         userRepository.save(user);
-        ensureStudentProfileExists(user);
+        ensureStudentProfileExists(user, request);
 
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.email(), request.password()));
@@ -127,7 +129,7 @@ public class AuthService {
         return new AuthResponse(accessToken, refreshToken, user.getEmail(), user.getFirstName(), user.getLastName(), roles);
     }
 
-    private void ensureStudentProfileExists(User user) {
+    private void ensureStudentProfileExists(User user, RegisterRequest request) {
         if (studentRepository.findByUserId(user.getId()).isPresent()) {
             return;
         }
@@ -137,6 +139,69 @@ public class AuthService {
         student.setStudentNumber("AUTO-" + UUID.randomUUID().toString().substring(0, 8));
         student.setDepartment("UNDECLARED");
         student.setFaculty("UNASSIGNED");
+        student.setNationality(request.nationality().trim());
+        student.setDateOfBirth(request.dateOfBirth());
+        student.setIdentityDocumentType(request.identityDocumentType());
+        student.setTcIdentityNumber(blankToNull(request.tcIdentityNumber()));
+        student.setIdentitySerialNo(blankToNull(request.identitySerialNo()));
+        student.setPassportNumber(blankToNull(request.passportNumber()));
+        student.setPassportExpirationDate(request.passportExpirationDate());
+        student.setCurrentProgram(request.currentProgram().trim());
+        student.setCurrentUniversity(request.currentUniversity().trim());
         studentRepository.save(student);
+    }
+
+    private void validateStudentIdentityFields(RegisterRequest request) {
+        LocalDate today = LocalDate.now();
+        if (request.dateOfBirth().isAfter(today)) {
+            throw new IllegalArgumentException("dateOfBirth cannot be in the future");
+        }
+
+        boolean isTurkish = "TURKISH".equalsIgnoreCase(request.nationality().trim());
+        boolean tcSelected = "TC_ID".equals(request.identityDocumentType());
+        boolean passportSelected = "PASSPORT".equals(request.identityDocumentType());
+
+        if (isTurkish && !tcSelected) {
+            throw new IllegalArgumentException("Turkish nationality must use identityDocumentType=TC_ID");
+        }
+        if (!isTurkish && !passportSelected) {
+            throw new IllegalArgumentException("Non-Turkish nationality must use identityDocumentType=PASSPORT");
+        }
+
+        if (tcSelected) {
+            String tc = blankToNull(request.tcIdentityNumber());
+            if (tc == null || !tc.matches("\\d{11}")) {
+                throw new IllegalArgumentException("tcIdentityNumber must be exactly 11 digits for TC_ID");
+            }
+            if (blankToNull(request.identitySerialNo()) == null) {
+                throw new IllegalArgumentException("identitySerialNo is required for TC_ID");
+            }
+            if (blankToNull(request.passportNumber()) != null || request.passportExpirationDate() != null) {
+                throw new IllegalArgumentException("passport fields must be empty for TC_ID");
+            }
+            return;
+        }
+
+        String passportNumber = blankToNull(request.passportNumber());
+        if (passportNumber == null) {
+            throw new IllegalArgumentException("passportNumber is required for PASSPORT");
+        }
+        if (request.passportExpirationDate() == null) {
+            throw new IllegalArgumentException("passportExpirationDate is required for PASSPORT");
+        }
+        if (!request.passportExpirationDate().isAfter(today)) {
+            throw new IllegalArgumentException("passportExpirationDate must be a future date");
+        }
+        if (blankToNull(request.tcIdentityNumber()) != null || blankToNull(request.identitySerialNo()) != null) {
+            throw new IllegalArgumentException("TC identity fields must be empty for PASSPORT");
+        }
+    }
+
+    private String blankToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }
