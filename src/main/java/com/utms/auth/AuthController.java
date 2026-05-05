@@ -1,14 +1,19 @@
 package com.utms.auth;
 
 import com.utms.auth.dto.AuthResponse;
+import com.utms.auth.dto.CaptchaChallengeResponse;
 import com.utms.auth.dto.LoginRequest;
+import com.utms.auth.dto.RegisterCancelRequest;
 import com.utms.auth.dto.RefreshTokenRequest;
 import com.utms.auth.dto.RefreshTokenResponse;
-import com.utms.auth.dto.RegisterRequest;
+import com.utms.auth.dto.RegisterStartRequest;
+import com.utms.auth.dto.RegisterStartResponse;
+import com.utms.auth.dto.RegisterVerifyRequest;
 import com.utms.common.api.ApiResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,10 +29,28 @@ public class AuthController {
         this.authService = authService;
     }
 
-    @PostMapping("/register")
-    public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterRequest request) {
-        AuthResponse response = authService.register(request);
+    @GetMapping("/captcha/challenge")
+    public ResponseEntity<ApiResponse<CaptchaChallengeResponse>> captchaChallenge() {
+        CaptchaChallengeResponse response = authService.getCaptchaChallenge();
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/register/start")
+    public ResponseEntity<ApiResponse<RegisterStartResponse>> registerStart(@Valid @RequestBody RegisterStartRequest request) {
+        RegisterStartResponse response = authService.registerStart(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
+    }
+
+    @PostMapping("/register/verify")
+    public ResponseEntity<ApiResponse<AuthResponse>> registerVerify(@Valid @RequestBody RegisterVerifyRequest request) {
+        AuthResponse response = authService.verifyRegistration(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
+    }
+
+    @PostMapping("/register/cancel")
+    public ResponseEntity<ApiResponse<Void>> registerCancel(@Valid @RequestBody RegisterCancelRequest request) {
+        authService.cancelRegistration(request);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @PostMapping("/login")

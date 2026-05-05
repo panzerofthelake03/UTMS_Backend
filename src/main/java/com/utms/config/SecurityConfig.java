@@ -68,7 +68,13 @@ public class SecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/health", "/actuator/health", "/actuator/info").permitAll()
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh").permitAll()
+                        .requestMatchers(
+                            "/api/auth/captcha/challenge",
+                            "/api/auth/register/start",
+                            "/api/auth/register/verify",
+                            "/api/auth/register/cancel",
+                            "/api/auth/login",
+                            "/api/auth/refresh").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions
