@@ -11,8 +11,6 @@ import jakarta.persistence.Table;
 import java.util.HashSet;
 import java.util.Set;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "users")
 public class User extends BaseEntity {
@@ -31,12 +29,6 @@ public class User extends BaseEntity {
 
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
-
-    @Column(name = "failed_login_attempts")
-    private int failedLoginAttempts = 0;
-
-    @Column(name = "lock_time")
-    private LocalDateTime lockTime;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
@@ -86,22 +78,6 @@ public class User extends BaseEntity {
 
     public void setActive(boolean active) {
         this.active = active;
-    }
-
-    public int getFailedLoginAttempts() {
-        return failedLoginAttempts;
-    }
-
-    public void setFailedLoginAttempts(int failedLoginAttempts) {
-        this.failedLoginAttempts = failedLoginAttempts;
-    }
-
-    public LocalDateTime getLockTime() {
-        return lockTime;
-    }
-
-    public void setLockTime(LocalDateTime lockTime) {
-        this.lockTime = lockTime;
     }
 
     public Set<Role> getRoles() {

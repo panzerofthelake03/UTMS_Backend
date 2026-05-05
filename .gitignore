@@ -3,8 +3,3 @@ target/
 .vscode/
 *.iml
 .DS_Store
-
-
-.md
-.yml
-.ps1
