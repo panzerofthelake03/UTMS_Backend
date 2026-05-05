@@ -37,10 +37,15 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.security.authentication.BadCredentialsException;
+import java.time.LocalDateTime;
+
 @Service
 public class AuthService {
 
     private static final String DEFAULT_ROLE = RoleConstants.ROLE_STUDENT;
+    private static final int MAX_FAILED_ATTEMPTS = 5;
+    private static final long LOCK_TIME_DURATION_MINUTES = 30;
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
@@ -188,31 +193,48 @@ public class AuthService {
         return buildAuthResponse(user, accessToken, refreshToken);
     }
 
-    @Transactional
-    public void cancelRegistration(RegisterCancelRequest request) {
-        pendingRegistrationRepository.findByVerificationSessionId(request.verificationSessionId())
-                .ifPresent(pending -> {
-                    if (RegistrationStatus.PENDING.equals(pending.getStatus())) {
-                        pending.setStatus(RegistrationStatus.CANCELED);
-                        pendingRegistrationRepository.save(pending);
-                    }
-                });
-    }
-
-    public CaptchaChallengeResponse getCaptchaChallenge() {
-        return captchaService.generateChallenge();
-    }
-
+    @Transactional(noRollbackFor = {BadCredentialsException.class, IllegalStateException.class})
     public AuthResponse login(LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.password()));
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
+
+        if (!user.isActive()) {
+            throw new IllegalStateException("User account is disabled");
+        }
+
+        if (user.getLockTime() != null) {
+            if (user.getLockTime().plusMinutes(LOCK_TIME_DURATION_MINUTES).isAfter(LocalDateTime.now())) {
+                throw new IllegalStateException("Your account has been locked due to 5 failed login attempts. Please try again later.");
+            } else {
+                user.setLockTime(null);
+                user.setFailedLoginAttempts(0);
+                userRepository.save(user);
+            }
+        }
+
+        Authentication authentication;
+        try {
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.email(), request.password()));
+        } catch (BadCredentialsException ex) {
+            int attempts = user.getFailedLoginAttempts() + 1;
+            user.setFailedLoginAttempts(attempts);
+            if (attempts >= MAX_FAILED_ATTEMPTS) {
+                user.setLockTime(LocalDateTime.now());
+                userRepository.save(user);
+                throw new IllegalStateException("Your account has been locked due to 5 failed login attempts. Please try again later.");
+            }
+            userRepository.save(user);
+            throw ex;
+        }
+
+        user.setFailedLoginAttempts(0);
+        user.setLockTime(null);
+        userRepository.save(user);
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         String accessToken = tokenProvider.generateAccessToken(userDetails);
         String refreshToken = tokenProvider.generateRefreshToken(userDetails);
-
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new IllegalStateException("User disappeared after authentication"));
 
         return buildAuthResponse(user, accessToken, refreshToken);
     }
