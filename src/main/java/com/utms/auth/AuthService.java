@@ -87,7 +87,7 @@ public class AuthService {
         return buildAuthResponse(user, accessToken, refreshToken);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = {BadCredentialsException.class, IllegalStateException.class})
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.email())
                 .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
