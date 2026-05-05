@@ -25,3 +25,8 @@ logging:
   level:
     org.springframework.security: INFO
     org.hibernate.SQL: DEBUG
+
+app:
+  auth:
+    verification:
+      dev-expose-code: true
