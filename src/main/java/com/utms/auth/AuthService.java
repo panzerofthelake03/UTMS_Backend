@@ -94,7 +94,10 @@ public class AuthService {
 
         RegisterRequest request = toRegisterRequest(startRequest);
 
-        if (userRepository.existsByEmail(request.email())) {
+        // Normalize email once — all subsequent checks use the normalized form
+        String normalizedEmail = request.email().trim().toLowerCase();
+
+        if (userRepository.existsByEmail(normalizedEmail)) {
             throw new ConflictException("Account already exists for this email.");
         }
 
@@ -107,13 +110,13 @@ public class AuthService {
                 request.dateOfBirth()
             );
         }
-        invalidateExistingPendingRegistrations(request.email());
+        invalidateExistingPendingRegistrations(normalizedEmail);
 
         String otpCode = generateOtpCode();
 
         PendingRegistration pending = new PendingRegistration();
         pending.setVerificationSessionId(UUID.randomUUID().toString());
-        pending.setEmail(request.email().trim().toLowerCase());
+        pending.setEmail(normalizedEmail);
         pending.setPasswordHash(passwordEncoder.encode(request.password()));
         pending.setFirstName(request.firstName().trim());
         pending.setLastName(request.lastName().trim());
@@ -132,11 +135,11 @@ public class AuthService {
         pending.setStatus(RegistrationStatus.PENDING);
 
         pendingRegistrationRepository.save(pending);
-        String devVerificationCode = verificationEmailService.sendRegistrationCode(request.email(), otpCode);
+        String devVerificationCode = verificationEmailService.sendRegistrationCode(normalizedEmail, otpCode);
 
         return new RegisterStartResponse(
                 pending.getVerificationSessionId(),
-                maskEmail(request.email()),
+                maskEmail(normalizedEmail),
                 codeExpirationSeconds,
                 devVerificationCode);
     }
@@ -206,7 +209,9 @@ public class AuthService {
 
     @Transactional(noRollbackFor = {BadCredentialsException.class, IllegalStateException.class})
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.email())
+        String normalizedEmail = request.email().trim().toLowerCase();
+
+        User user = userRepository.findByEmail(normalizedEmail)
                 .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
 
         if (!user.isActive()) {
@@ -226,7 +231,7 @@ public class AuthService {
         Authentication authentication;
         try {
             authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.email(), request.password()));
+                    new UsernamePasswordAuthenticationToken(normalizedEmail, request.password()));
         } catch (BadCredentialsException ex) {
             int attempts = user.getFailedLoginAttempts() + 1;
             user.setFailedLoginAttempts(attempts);
