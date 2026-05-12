@@ -56,6 +56,7 @@ public class AuthService {
     private final JwtTokenProvider tokenProvider;
     private final CaptchaService captchaService;
     private final VerificationEmailService verificationEmailService;
+    private final MernisService mernisService;
 
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -73,7 +74,8 @@ public class AuthService {
                        AuthenticationManager authenticationManager,
                        JwtTokenProvider tokenProvider,
                        CaptchaService captchaService,
-                       VerificationEmailService verificationEmailService) {
+                       VerificationEmailService verificationEmailService,
+                       MernisService mernisService) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.studentRepository = studentRepository;
@@ -83,6 +85,7 @@ public class AuthService {
         this.tokenProvider = tokenProvider;
         this.captchaService = captchaService;
         this.verificationEmailService = verificationEmailService;
+        this.mernisService = mernisService;
     }
 
     @Transactional
@@ -92,10 +95,18 @@ public class AuthService {
         RegisterRequest request = toRegisterRequest(startRequest);
 
         if (userRepository.existsByEmail(request.email())) {
-            throw new ConflictException("Email already registered: " + request.email());
+            throw new ConflictException("Account already exists for this email.");
         }
 
         validateStudentIdentityFields(request);
+        if ("TC_ID".equals(request.identityDocumentType())) {
+            mernisService.verifyIdentity(
+                request.tcIdentityNumber(),
+                request.firstName(),
+                request.lastName(),
+                request.dateOfBirth()
+            );
+        }
         invalidateExistingPendingRegistrations(request.email());
 
         String otpCode = generateOtpCode();
@@ -262,6 +273,21 @@ public class AuthService {
         return new RefreshTokenResponse(newAccessToken, newRefreshToken);
     }
 
+    public CaptchaChallengeResponse getCaptchaChallenge() {
+        return captchaService.generateChallenge();
+    }
+
+    @Transactional
+    public void cancelRegistration(RegisterCancelRequest request) {
+        String sessionId = request.verificationSessionId();
+        PendingRegistration pending = pendingRegistrationRepository.findByVerificationSessionId(sessionId)
+                .orElse(null);
+        if (pending != null && RegistrationStatus.PENDING.equals(pending.getStatus())) {
+            pending.setStatus(RegistrationStatus.CANCELED);
+            pendingRegistrationRepository.save(pending);
+        }
+    }
+
     private AuthResponse buildAuthResponse(User user, String accessToken, String refreshToken) {
         List<String> roles = user.getRoles().stream()
                 .map(Role::getName)
@@ -362,6 +388,9 @@ public class AuthService {
             if (tc == null || !tc.matches("\\d{11}")) {
                 throw new IllegalArgumentException("tcIdentityNumber must be exactly 11 digits for TC_ID");
             }
+            if (studentRepository.existsByTcIdentityNumber(tc)) {
+                throw new ConflictException("This TC or Passport Number is already registered to another account.");
+            }
             if (blankToNull(request.identitySerialNo()) == null) {
                 throw new IllegalArgumentException("identitySerialNo is required for TC_ID");
             }
@@ -374,6 +403,9 @@ public class AuthService {
         String passportNumber = blankToNull(request.passportNumber());
         if (passportNumber == null) {
             throw new IllegalArgumentException("passportNumber is required for PASSPORT");
+        }
+        if (studentRepository.existsByPassportNumber(passportNumber)) {
+            throw new ConflictException("This TC or Passport Number is already registered to another account.");
         }
         if (request.passportExpirationDate() == null) {
             throw new IllegalArgumentException("passportExpirationDate is required for PASSPORT");

@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ApiResponse<Void>> handleAuthentication(AuthenticationException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                .body(ApiResponse.failure("UNAUTHORIZED", ex.getMessage()));
+                .body(ApiResponse.failure("UNAUTHORIZED", "Invalid email or password."));
     }
 
     @ExceptionHandler(ConflictException.class)
