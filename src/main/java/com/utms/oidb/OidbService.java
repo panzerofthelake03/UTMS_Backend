@@ -8,6 +8,7 @@ import com.utms.application.ApplicationStatusHistoryRepository;
 import com.utms.common.dto.AdminApplicationResponse;
 import com.utms.common.security.AuthenticatedUserService;
 import com.utms.student.Student;
+import com.utms.student.dto.StudentProfileResponse;
 import com.utms.user.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
@@ -91,6 +92,36 @@ public class OidbService {
         saveHistory(application, fromStatus, ApplicationStatus.UNDER_YDYO_REVIEW, actor, historyNote);
 
         return toAdminResponse(application);
+    }
+
+    /**
+     * UC 3.2 — Returns full student identity profile for an application's student.
+     * Accessible only by ROLE_OIDB / ROLE_ADMIN via OidbController.
+     */
+    @Transactional(readOnly = true)
+    public StudentProfileResponse getStudentProfile(Long applicationId) {
+        Application application = findApplication(applicationId);
+        Student student = application.getStudent();
+        User user = student.getUser();
+        return new StudentProfileResponse(
+                buildFullName(user.getFirstName(), user.getLastName()),
+                user.getEmail(),
+                student.getNationality(),
+                student.getIdentityDocumentType(),
+                student.getTcIdentityNumber(),
+                student.getPassportNumber(),
+                student.getDateOfBirth(),
+                student.getIdentitySerialNo(),
+                student.getPassportExpirationDate(),
+                student.getCurrentProgram(),
+                student.getCurrentUniversity()
+        );
+    }
+
+    private String buildFullName(String firstName, String lastName) {
+        String safeFirst = firstName == null ? "" : firstName.trim();
+        String safeLast = lastName == null ? "" : lastName.trim();
+        return (safeFirst + " " + safeLast).trim();
     }
 
     private Application findApplication(Long applicationId) {

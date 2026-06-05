@@ -3,6 +3,7 @@ package com.utms.oidb;
 import com.utms.common.api.ApiResponse;
 import com.utms.common.dto.AdminApplicationResponse;
 import com.utms.oidb.dto.ForwardToYdyoRequest;
+import com.utms.student.dto.StudentProfileResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -53,5 +54,14 @@ public class OidbController {
             @RequestBody(required = false) ForwardToYdyoRequest request) {
         String note = request != null ? request.getNote() : null;
         return ResponseEntity.ok(ApiResponse.success(oidbService.forwardToYdyo(id, note)));
+    }
+
+    /**
+     * GET /api/oidb/applications/{id}/student-profile
+     * UC 3.2 — Returns full student identity details for the given application.
+     */
+    @GetMapping("/applications/{id}/student-profile")
+    public ResponseEntity<ApiResponse<StudentProfileResponse>> getStudentProfile(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(oidbService.getStudentProfile(id)));
     }
 }
