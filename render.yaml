@@ -1,0 +1,47 @@
+databases:
+  - name: utms-db
+    databaseName: utms
+    user: utms
+    plan: free
+    region: frankfurt
+
+services:
+  - type: web
+    name: utms-backend
+    runtime: docker
+    plan: free
+    region: frankfurt
+    branch: yunus_deploy
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DB_HOST
+        fromDatabase:
+          name: utms-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: utms-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: utms-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: utms-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: utms-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://utms-frontend-one.vercel.app
+      - key: AUTH_VERIFICATION_DEV_EXPOSE_CODE
+        value: "true"
+      - key: JAVA_TOOL_OPTIONS
+        value: "-XX:MaxRAMPercentage=70.0 -XX:+UseSerialGC"
