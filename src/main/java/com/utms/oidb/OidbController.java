@@ -57,6 +57,15 @@ public class OidbController {
     }
 
     /**
+     * GET /api/oidb/results
+     * UC 5.3 — Returns all finalized (ACCEPTED / REJECTED) applications.
+     */
+    @GetMapping("/results")
+    public ResponseEntity<ApiResponse<List<AdminApplicationResponse>>> getResults() {
+        return ResponseEntity.ok(ApiResponse.success(oidbService.getResults()));
+    }
+
+    /**
      * GET /api/oidb/applications/{id}/student-profile
      * UC 3.2 — Returns full student identity details for the given application.
      */

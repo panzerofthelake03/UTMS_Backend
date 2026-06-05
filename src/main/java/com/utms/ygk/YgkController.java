@@ -4,6 +4,7 @@ import com.utms.common.api.ApiResponse;
 import com.utms.common.dto.AdminApplicationResponse;
 import com.utms.ygk.dto.EvaluationRequest;
 import com.utms.ygk.dto.EvaluationResponse;
+import com.utms.ygk.dto.PlacementEntryResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -54,5 +55,14 @@ public class YgkController {
             @PathVariable Long id,
             @Valid @RequestBody EvaluationRequest request) {
         return ResponseEntity.ok(ApiResponse.success(ygkService.submitEvaluation(id, request)));
+    }
+
+    /**
+     * GET /api/ygk/placement
+     * UC 5.2 — Returns evaluated applications ranked by composite score.
+     */
+    @GetMapping("/placement")
+    public ResponseEntity<ApiResponse<List<PlacementEntryResponse>>> getPlacementList() {
+        return ResponseEntity.ok(ApiResponse.success(ygkService.getPlacementList()));
     }
 }

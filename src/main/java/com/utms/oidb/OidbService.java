@@ -95,6 +95,19 @@ public class OidbService {
     }
 
     /**
+     * UC 5.3 — Returns all finalized applications (ACCEPTED + REJECTED) for ÖİDB results view.
+     */
+    @Transactional(readOnly = true)
+    public List<AdminApplicationResponse> getResults() {
+        return applicationRepository
+                .findByStatusInOrderByCreatedAtAsc(
+                        List.of(ApplicationStatus.ACCEPTED, ApplicationStatus.REJECTED))
+                .stream()
+                .map(this::toAdminResponse)
+                .toList();
+    }
+
+    /**
      * UC 3.2 — Returns full student identity profile for an application's student.
      * Accessible only by ROLE_OIDB / ROLE_ADMIN via OidbController.
      */

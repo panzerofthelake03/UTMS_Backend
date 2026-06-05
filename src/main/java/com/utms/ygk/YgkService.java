@@ -12,6 +12,7 @@ import com.utms.student.Student;
 import com.utms.user.User;
 import com.utms.ygk.dto.EvaluationRequest;
 import com.utms.ygk.dto.EvaluationResponse;
+import com.utms.ygk.dto.PlacementEntryResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -118,10 +119,10 @@ public class YgkService {
         evaluation.setDecision(request.getDecision());
         evaluationRepository.save(evaluation);
 
-        // Transition application status
+        // Transition application status — ACCEPTED goes to Dean for final approval (UC 4.1)
         String fromStatus = application.getStatus();
         String toStatus = "ACCEPTED".equals(request.getDecision())
-                ? ApplicationStatus.ACCEPTED
+                ? ApplicationStatus.PENDING_DEAN_APPROVAL
                 : ApplicationStatus.REJECTED;
 
         application.setStatus(toStatus);
@@ -136,6 +137,50 @@ public class YgkService {
         notificationService.createApplicationResultNotification(application, request.getDecision());
 
         return toResponse(evaluation);
+    }
+
+    /**
+     * UC 5.2 — Returns applications pending dean approval, ranked by composite score.
+     */
+    @Transactional(readOnly = true)
+    public List<PlacementEntryResponse> getPlacementList() {
+        List<Application> apps = applicationRepository.findByStatusInOrderByCreatedAtAsc(
+                List.of(ApplicationStatus.PENDING_DEAN_APPROVAL, ApplicationStatus.ACCEPTED));
+
+        List<PlacementEntryResponse> entries = new java.util.ArrayList<>();
+        for (Application app : apps) {
+            evaluationRepository.findByApplicationId(app.getId()).ifPresent(eval -> {
+                Student student = app.getStudent();
+                User user = student.getUser();
+                entries.add(new PlacementEntryResponse(
+                        0,
+                        app.getId(),
+                        user.getFirstName() + " " + user.getLastName(),
+                        student.getStudentNumber(),
+                        student.getDepartment(),
+                        student.getFaculty(),
+                        app.getTerm(),
+                        eval.getCompositeScore(),
+                        app.getStatus()
+                ));
+            });
+        }
+
+        entries.sort((a, b) -> {
+            if (a.compositeScore() == null && b.compositeScore() == null) return 0;
+            if (a.compositeScore() == null) return 1;
+            if (b.compositeScore() == null) return -1;
+            return b.compositeScore().compareTo(a.compositeScore());
+        });
+
+        List<PlacementEntryResponse> ranked = new java.util.ArrayList<>();
+        for (int i = 0; i < entries.size(); i++) {
+            PlacementEntryResponse e = entries.get(i);
+            ranked.add(new PlacementEntryResponse(i + 1, e.applicationId(), e.studentName(),
+                    e.studentNumber(), e.department(), e.faculty(), e.term(),
+                    e.compositeScore(), e.status()));
+        }
+        return ranked;
     }
 
     private void saveHistory(Application application, String fromStatus, String toStatus,
