@@ -74,7 +74,10 @@ public class SecurityConfig {
                             "/api/auth/register/verify",
                             "/api/auth/register/cancel",
                             "/api/auth/login",
-                            "/api/auth/refresh").permitAll()
+                            "/api/auth/refresh",
+                            "/api/auth/password/forgot",
+                            "/api/auth/password/verify",
+                            "/api/auth/password/reset").permitAll()
                         .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions
