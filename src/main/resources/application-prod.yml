@@ -21,6 +21,16 @@ logging:
     root: INFO
     org.springframework.security: WARN
 
+management:
+  endpoint:
+    health:
+      show-details: always
+  health:
+    # SMTP egress is blocked on Render's free tier (ports 25/465/587), so the
+    # mail health probe hangs and makes /actuator/health time out -> deploy fails.
+    mail:
+      enabled: false
+
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:https://utms.vercel.app}
