@@ -19,6 +19,7 @@ spring:
             enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
 
 server:
+  port: ${PORT:8080}
   servlet:
     context-path: /
 
