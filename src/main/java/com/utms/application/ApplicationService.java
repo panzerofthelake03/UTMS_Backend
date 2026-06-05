@@ -71,6 +71,11 @@ public class ApplicationService {
         application.setStatus(ApplicationStatus.DRAFT);
         application.setTerm(request.term());
         application.setApplicationNote(request.applicationNote());
+        application.setTargetDepartment(request.targetDepartment());
+        application.setPhone(request.phone());
+        application.setAddress(request.address());
+        application.setEnglishProficiencyOption(
+                request.englishProficiencyOption() != null ? request.englishProficiencyOption() : "DOCUMENT");
         application = applicationRepository.save(application);
 
         saveTimeline(application, null, ApplicationStatus.DRAFT, currentUser, "Application draft created");
@@ -86,6 +91,10 @@ public class ApplicationService {
 
         application.setTerm(request.term());
         application.setApplicationNote(request.applicationNote());
+        if (request.targetDepartment() != null) application.setTargetDepartment(request.targetDepartment());
+        if (request.phone() != null) application.setPhone(request.phone());
+        if (request.address() != null) application.setAddress(request.address());
+        if (request.englishProficiencyOption() != null) application.setEnglishProficiencyOption(request.englishProficiencyOption());
 
         return toResponse(applicationRepository.save(application));
     }
@@ -200,6 +209,10 @@ public class ApplicationService {
                 application.getStatus(),
                 application.getTerm(),
                 application.getApplicationNote(),
+                application.getTargetDepartment(),
+                application.getPhone(),
+                application.getAddress(),
+                application.getEnglishProficiencyOption(),
                 application.getSubmittedAt(),
                 application.getCreatedAt(),
                 application.getUpdatedAt()

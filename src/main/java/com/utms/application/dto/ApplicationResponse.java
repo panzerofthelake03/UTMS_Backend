@@ -8,6 +8,10 @@ public record ApplicationResponse(
         String status,
         String term,
         String applicationNote,
+        String targetDepartment,
+        String phone,
+        String address,
+        String englishProficiencyOption,
         Instant submittedAt,
         Instant createdAt,
         Instant updatedAt
