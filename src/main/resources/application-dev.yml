@@ -29,4 +29,4 @@ logging:
 app:
   auth:
     verification:
-      dev-expose-code: true
+      dev-expose-code: false
