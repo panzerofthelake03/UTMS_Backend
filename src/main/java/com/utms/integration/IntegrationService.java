@@ -40,6 +40,7 @@ public class IntegrationService {
         UbysService.UbysStudentRecord record = ubysService.lookupByStudentNumber(student.getStudentNumber());
 
         boolean profileUpdated = false;
+        // Only update profile when UBYS returns real data (non-zero GPA means a real record)
         if (record != null && !record.gpa().equals(java.math.BigDecimal.ZERO)) {
             student.setGpa(record.gpa());
             if (!"UNDECLARED".equals(record.department())) {
@@ -52,13 +53,30 @@ public class IntegrationService {
             profileUpdated = true;
         }
 
+        // When UBYS has no matching record, fall back to the student's own profile data
+        // so the form always shows meaningful academic information.
+        java.math.BigDecimal displayGpa = (record != null && !record.gpa().equals(java.math.BigDecimal.ZERO))
+                ? record.gpa()
+                : (student.getGpa() != null ? student.getGpa() : java.math.BigDecimal.ZERO);
+
+        String displayDepartment = (record != null && !"UNDECLARED".equals(record.department()))
+                ? record.department()
+                : student.getDepartment();
+
+        String displayFaculty = (record != null && !"UNASSIGNED".equals(record.faculty()))
+                ? record.faculty()
+                : student.getFaculty();
+
+        int displayCredits = (record != null) ? record.completedCredits() : 0;
+        java.util.List<String> displayCourses = (record != null) ? record.completedCourses() : java.util.List.of();
+
         return new UbysAutofillResponse(
-                record.studentNumber(),
-                record.department(),
-                record.faculty(),
-                record.gpa(),
-                record.completedCredits(),
-                record.completedCourses(),
+                student.getStudentNumber(),
+                displayDepartment,
+                displayFaculty,
+                displayGpa,
+                displayCredits,
+                displayCourses,
                 profileUpdated
         );
     }
