@@ -42,7 +42,8 @@ public class OidbService {
     public List<AdminApplicationResponse> listPendingApplications() {
         return applicationRepository
                 .findByStatusInOrderByCreatedAtAsc(
-                        List.of(ApplicationStatus.SUBMITTED, ApplicationStatus.UNDER_OIDB_REVIEW))
+                        List.of(ApplicationStatus.SUBMITTED, ApplicationStatus.UNDER_OIDB_REVIEW,
+                                ApplicationStatus.FROM_YGK))
                 .stream()
                 .map(this::toAdminResponse)
                 .toList();
@@ -173,7 +174,8 @@ public class OidbService {
                 user.getEmail(),
                 student.getDepartment(),
                 student.getFaculty(),
-                student.getGpa()
+                student.getGpa(),
+                student.getYksScore()
         );
     }
 }

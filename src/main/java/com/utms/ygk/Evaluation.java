@@ -41,6 +41,12 @@ public class Evaluation extends BaseEntity {
     @JoinColumn(name = "ydyo_reviewer_id")
     private User ydyoReviewer;
 
+    @Column(name = "dept_conditions_verified", nullable = false)
+    private boolean deptConditionsVerified = false;
+
+    @Column(name = "language_score", precision = 6, scale = 2)
+    private BigDecimal languageScore;
+
     public Evaluation() {}
 
     public Application getApplication() { return application; }
@@ -63,4 +69,10 @@ public class Evaluation extends BaseEntity {
 
     public User getYdyoReviewer() { return ydyoReviewer; }
     public void setYdyoReviewer(User ydyoReviewer) { this.ydyoReviewer = ydyoReviewer; }
+
+    public boolean isDeptConditionsVerified() { return deptConditionsVerified; }
+    public void setDeptConditionsVerified(boolean deptConditionsVerified) { this.deptConditionsVerified = deptConditionsVerified; }
+
+    public BigDecimal getLanguageScore() { return languageScore; }
+    public void setLanguageScore(BigDecimal languageScore) { this.languageScore = languageScore; }
 }

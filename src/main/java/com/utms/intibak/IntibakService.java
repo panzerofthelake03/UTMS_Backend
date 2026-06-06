@@ -138,7 +138,8 @@ public class IntibakService {
                 user.getEmail(),
                 student.getDepartment(),
                 student.getFaculty(),
-                student.getGpa());
+                student.getGpa(),
+                student.getYksScore());
     }
 
     private CourseExemptionResponse toResponse(CourseExemption e) {

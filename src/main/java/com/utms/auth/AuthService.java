@@ -30,6 +30,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -368,6 +370,9 @@ public class AuthService {
         student.setPassportExpirationDate(pending.getPassportExpirationDate());
         student.setCurrentProgram(pending.getCurrentProgram());
         student.setCurrentUniversity(pending.getCurrentUniversity());
+        // Assign a random demo YKS score (250–500) so the score is available from registration
+        double rawYks = 250 + new SecureRandom().nextDouble() * 250;
+        student.setYksScore(BigDecimal.valueOf(rawYks).setScale(2, RoundingMode.HALF_UP));
         studentRepository.save(student);
     }
 

@@ -11,4 +11,5 @@ public final class RoleConstants {
     public static final String ROLE_YGK = "ROLE_YGK";
     public static final String ROLE_INTIBAK = "ROLE_INTIBAK";
     public static final String ROLE_ADMIN = "ROLE_ADMIN";
+    public static final String ROLE_DEAN = "ROLE_DEAN";
 }

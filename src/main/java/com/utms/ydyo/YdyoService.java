@@ -102,6 +102,12 @@ public class YdyoService {
         if ("APPROVED".equals(request.getDecision())) {
             toStatus = ApplicationStatus.UNDER_YGK_REVIEW;
             historyNote = "English document approved by YDYO — forwarded to YGK";
+            // Normalize YKS score (0–500) to language_score (0–100) for the composite formula
+            if (evaluation.getLanguageScore() == null && application.getStudent().getYksScore() != null) {
+                evaluation.setLanguageScore(application.getStudent().getYksScore()
+                        .divide(new java.math.BigDecimal("5"), 2, java.math.RoundingMode.HALF_UP));
+                evaluationRepository.save(evaluation);
+            }
         } else {
             toStatus = ApplicationStatus.WAITING_EXAM_RESULT;
             historyNote = "Language exam required — waiting for exam result";
@@ -173,7 +179,15 @@ public class YdyoService {
                 String toStatus;
                 String note;
                 switch (eval.getYdyoDecision()) {
-                    case "PASS" -> { toStatus = ApplicationStatus.UNDER_YGK_REVIEW; note = "YDYO: Pass — forwarded to YGK"; }
+                    case "PASS" -> {
+                        toStatus = ApplicationStatus.UNDER_YGK_REVIEW;
+                        note = "YDYO: Pass — forwarded to YGK";
+                        if (eval.getLanguageScore() == null && app.getStudent().getYksScore() != null) {
+                            eval.setLanguageScore(app.getStudent().getYksScore()
+                                    .divide(new java.math.BigDecimal("5"), 2, java.math.RoundingMode.HALF_UP));
+                            evaluationRepository.save(eval);
+                        }
+                    }
                     case "FAIL" -> { toStatus = ApplicationStatus.REJECTED; note = "YDYO: Fail — application rejected"; }
                     case "DOCUMENT_REQUIRED" -> { toStatus = ApplicationStatus.WAITING_EXAM_RESULT; note = "YDYO: Document required — waiting exam"; }
                     default -> { return; }
@@ -217,7 +231,8 @@ public class YdyoService {
                 user.getEmail(),
                 student.getDepartment(),
                 student.getFaculty(),
-                student.getGpa()
+                student.getGpa(),
+                student.getYksScore()
         );
     }
 }

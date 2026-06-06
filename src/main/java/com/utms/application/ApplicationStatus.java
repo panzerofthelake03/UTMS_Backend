@@ -14,4 +14,5 @@ public final class ApplicationStatus {
     public static final String ACCEPTED           = "ACCEPTED";
     public static final String REJECTED           = "REJECTED";
     public static final String PENDING_DEAN_APPROVAL = "PENDING_DEAN_APPROVAL";
+    public static final String FROM_YGK             = "FROM_YGK";
 }

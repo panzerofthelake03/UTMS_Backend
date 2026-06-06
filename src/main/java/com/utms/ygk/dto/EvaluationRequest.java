@@ -25,6 +25,9 @@ public class EvaluationRequest {
     @NotBlank
     private String decision;
 
+    /** SRS UC 3.1.5 — binary validation: department-specific conditions verified. */
+    private boolean deptConditionsVerified = false;
+
     public EvaluationRequest() {}
 
     public BigDecimal getLanguageScore() { return languageScore; }
@@ -38,4 +41,7 @@ public class EvaluationRequest {
 
     public String getDecision() { return decision; }
     public void setDecision(String decision) { this.decision = decision; }
+
+    public boolean isDeptConditionsVerified() { return deptConditionsVerified; }
+    public void setDeptConditionsVerified(boolean deptConditionsVerified) { this.deptConditionsVerified = deptConditionsVerified; }
 }
