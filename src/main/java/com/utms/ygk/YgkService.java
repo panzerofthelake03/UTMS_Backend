@@ -1,6 +1,3 @@
-Hayır, getStudentProfile metodunun kapanış parantezi eksik. return bloğunun sonunda ) var ama metodun } kapanışı yok, direkt finalizeList'in javadoc'u başlamış. Tam hali:
-
-
 package com.utms.ygk;
 
 import com.utms.application.Application;
