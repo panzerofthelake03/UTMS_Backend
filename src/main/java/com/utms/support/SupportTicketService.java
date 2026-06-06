@@ -1,8 +1,10 @@
 package com.utms.support;
 
 import com.utms.common.security.AuthenticatedUserService;
+import com.utms.notification.NotificationService;
 import com.utms.student.Student;
 import com.utms.student.StudentRepository;
+import com.utms.support.dto.AdminTicketResponse;
 import com.utms.support.dto.CreateTicketRequest;
 import com.utms.support.dto.TicketResponse;
 import com.utms.user.User;
@@ -14,6 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 /**
  * UC 1.7 - View Support Information / Send Message to OIDB.
@@ -27,13 +30,16 @@ public class SupportTicketService {
     private final SupportTicketRepository ticketRepository;
     private final StudentRepository studentRepository;
     private final AuthenticatedUserService authenticatedUserService;
+    private final NotificationService notificationService;
 
     public SupportTicketService(SupportTicketRepository ticketRepository,
                                 StudentRepository studentRepository,
-                                AuthenticatedUserService authenticatedUserService) {
+                                AuthenticatedUserService authenticatedUserService,
+                                NotificationService notificationService) {
         this.ticketRepository = ticketRepository;
         this.studentRepository = studentRepository;
         this.authenticatedUserService = authenticatedUserService;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -58,11 +64,46 @@ public class SupportTicketService {
         ticket.setTicketStatus("PENDING");
         ticket = ticketRepository.save(ticket);
 
+        notificationService.createSupportTicketNotification(ticket);
+
         return toResponse(ticket);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AdminTicketResponse> listAllTickets() {
+        return ticketRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(this::toAdminResponse)
+                .toList();
+    }
+
+    @Transactional
+    public AdminTicketResponse updateTicketStatus(Long ticketId, String status) {
+        SupportTicket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Ticket not found: " + ticketId));
+        ticket.setTicketStatus(status);
+        return toAdminResponse(ticketRepository.save(ticket));
     }
 
     private TicketResponse toResponse(SupportTicket t) {
         return new TicketResponse(t.getId(), t.getSubject(), t.getCategory(),
                 t.getMessage(), t.getTicketStatus(), t.getCreatedAt());
+    }
+
+    private AdminTicketResponse toAdminResponse(SupportTicket t) {
+        Student s = t.getStudent();
+        User u = s.getUser();
+        return new AdminTicketResponse(
+                t.getId(),
+                t.getSubject(),
+                t.getCategory(),
+                t.getMessage(),
+                t.getTicketStatus(),
+                t.getCreatedAt(),
+                u.getFirstName() + " " + u.getLastName(),
+                u.getEmail(),
+                s.getStudentNumber()
+        );
     }
 }
