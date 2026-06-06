@@ -95,6 +95,67 @@ public class OidbService {
     }
 
     /**
+     * ÖİDB rejects an application at the initial review stage.
+     * Allowed transitions: SUBMITTED → REJECTED, UNDER_OIDB_REVIEW → REJECTED
+     */
+    @Transactional
+    public AdminApplicationResponse rejectApplication(Long applicationId, String note) {
+        User actor = authenticatedUserService.getCurrentUser();
+        Application application = findApplication(applicationId);
+
+        String current = application.getStatus();
+        if (!ApplicationStatus.SUBMITTED.equals(current) && !ApplicationStatus.UNDER_OIDB_REVIEW.equals(current)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Application must be in SUBMITTED or UNDER_OIDB_REVIEW status to reject (current: " + current + ")");
+        }
+
+        application.setStatus(ApplicationStatus.REJECTED);
+        applicationRepository.save(application);
+
+        String historyNote = (note != null && !note.isBlank()) ? note : "Rejected by ÖİDB during initial review";
+        saveHistory(application, current, ApplicationStatus.REJECTED, actor, historyNote);
+
+        return toAdminResponse(application);
+    }
+
+    /**
+     * ÖİDB secondary rejection after YGK decision.
+     * Allowed transition: PENDING_DEAN_APPROVAL → REJECTED
+     * Used when ÖİDB disagrees with YGK's acceptance.
+     */
+    @Transactional
+    public AdminApplicationResponse secondaryReject(Long applicationId, String note) {
+        User actor = authenticatedUserService.getCurrentUser();
+        Application application = findApplication(applicationId);
+
+        if (!ApplicationStatus.PENDING_DEAN_APPROVAL.equals(application.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Secondary rejection only allowed for applications in PENDING_DEAN_APPROVAL status (current: "
+                            + application.getStatus() + ")");
+        }
+
+        application.setStatus(ApplicationStatus.REJECTED);
+        applicationRepository.save(application);
+
+        String historyNote = (note != null && !note.isBlank()) ? note : "Rejected by ÖİDB after YGK review";
+        saveHistory(application, ApplicationStatus.PENDING_DEAN_APPROVAL, ApplicationStatus.REJECTED, actor, historyNote);
+
+        return toAdminResponse(application);
+    }
+
+    /**
+     * Returns applications in PENDING_DEAN_APPROVAL status for ÖİDB secondary review.
+     */
+    @Transactional(readOnly = true)
+    public List<AdminApplicationResponse> listPendingSecondaryReview() {
+        return applicationRepository
+                .findByStatusInOrderByCreatedAtAsc(List.of(ApplicationStatus.PENDING_DEAN_APPROVAL))
+                .stream()
+                .map(this::toAdminResponse)
+                .toList();
+    }
+
+    /**
      * UC 5.3 — Returns all finalized applications (ACCEPTED + REJECTED) for ÖİDB results view.
      */
     @Transactional(readOnly = true)

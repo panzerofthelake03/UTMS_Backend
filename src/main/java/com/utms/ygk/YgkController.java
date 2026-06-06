@@ -65,4 +65,13 @@ public class YgkController {
     public ResponseEntity<ApiResponse<List<PlacementEntryResponse>>> getPlacementList() {
         return ResponseEntity.ok(ApiResponse.success(ygkService.getPlacementList()));
     }
+
+    /**
+     * POST /api/ygk/finalize-list
+     * MTL-1C — YGK confirms the placement list is ready for secondary review.
+     */
+    @PostMapping("/finalize-list")
+    public ResponseEntity<ApiResponse<Integer>> finalizeList() {
+        return ResponseEntity.ok(ApiResponse.success(ygkService.finalizeList()));
+    }
 }

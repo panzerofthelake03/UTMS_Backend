@@ -3,6 +3,7 @@ package com.utms.oidb;
 import com.utms.common.api.ApiResponse;
 import com.utms.common.dto.AdminApplicationResponse;
 import com.utms.oidb.dto.ForwardToYdyoRequest;
+import com.utms.oidb.dto.RejectApplicationRequest;
 import com.utms.student.dto.StudentProfileResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -54,6 +55,39 @@ public class OidbController {
             @RequestBody(required = false) ForwardToYdyoRequest request) {
         String note = request != null ? request.getNote() : null;
         return ResponseEntity.ok(ApiResponse.success(oidbService.forwardToYdyo(id, note)));
+    }
+
+    /**
+     * POST /api/oidb/applications/{id}/reject
+     * Rejects a SUBMITTED or UNDER_OIDB_REVIEW application.
+     */
+    @PostMapping("/applications/{id}/reject")
+    public ResponseEntity<ApiResponse<AdminApplicationResponse>> rejectApplication(
+            @PathVariable Long id,
+            @RequestBody(required = false) RejectApplicationRequest request) {
+        String note = request != null ? request.getNote() : null;
+        return ResponseEntity.ok(ApiResponse.success(oidbService.rejectApplication(id, note)));
+    }
+
+    /**
+     * GET /api/oidb/secondary-review
+     * Returns applications in PENDING_DEAN_APPROVAL for ÖİDB secondary review.
+     */
+    @GetMapping("/secondary-review")
+    public ResponseEntity<ApiResponse<List<AdminApplicationResponse>>> listSecondaryReview() {
+        return ResponseEntity.ok(ApiResponse.success(oidbService.listPendingSecondaryReview()));
+    }
+
+    /**
+     * POST /api/oidb/applications/{id}/secondary-reject
+     * ÖİDB rejects a PENDING_DEAN_APPROVAL application after YGK review.
+     */
+    @PostMapping("/applications/{id}/secondary-reject")
+    public ResponseEntity<ApiResponse<AdminApplicationResponse>> secondaryReject(
+            @PathVariable Long id,
+            @RequestBody(required = false) RejectApplicationRequest request) {
+        String note = request != null ? request.getNote() : null;
+        return ResponseEntity.ok(ApiResponse.success(oidbService.secondaryReject(id, note)));
     }
 
     /**
