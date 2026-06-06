@@ -16,7 +16,7 @@ import java.util.List;
  */
 @RestController
 @RequestMapping("/api/intibak/applications")
-@PreAuthorize("hasRole('ROLE_INTIBAK') or hasRole('ROLE_ADMIN')")
+@PreAuthorize("hasRole('ROLE_INTIBAK') or hasRole('ROLE_YGK') or hasRole('ROLE_ADMIN')")
 public class IntibakQueueController {
 
     private final IntibakService intibakService;
