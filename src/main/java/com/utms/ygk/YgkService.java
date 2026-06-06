@@ -1,3 +1,6 @@
+Hayır, getStudentProfile metodunun kapanış parantezi eksik. return bloğunun sonunda ) var ama metodun } kapanışı yok, direkt finalizeList'in javadoc'u başlamış. Tam hali:
+
+
 package com.utms.ygk;
 
 import com.utms.application.Application;
@@ -114,9 +117,11 @@ public class YgkService {
                 request.getAdjustment()
         );
 
+        evaluation.setLanguageScore(request.getLanguageScore());
         evaluation.setCompositeScore(compositeScore);
         evaluation.setEvaluatorNote(request.getEvaluatorNote());
         evaluation.setDecision(request.getDecision());
+        evaluation.setDeptConditionsVerified(request.isDeptConditionsVerified());
         evaluationRepository.save(evaluation);
 
         // Transition application status — ACCEPTED goes to Dean for final approval (UC 4.1)
@@ -137,6 +142,67 @@ public class YgkService {
         notificationService.createApplicationResultNotification(application, request.getDecision());
 
         return toResponse(evaluation);
+    }
+
+    /**
+     * Saves department-specific conditions verification without transitioning application status.
+     */
+    @Transactional
+    public EvaluationResponse saveDeptConditions(Long applicationId, boolean verified) {
+        Evaluation evaluation = evaluationRepository.findByApplicationId(applicationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Evaluation not found for application: " + applicationId));
+        evaluation.setDeptConditionsVerified(verified);
+        evaluationRepository.save(evaluation);
+        return toResponse(evaluation);
+    }
+
+    /**
+     * Returns an application from UNDER_YGK_REVIEW back to FROM_YGK
+     * (e.g. when YKS score is missing and OIDB must record it).
+     */
+    @Transactional
+    public AdminApplicationResponse sendBackToOidb(Long applicationId) {
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Application not found: " + applicationId));
+
+        if (!ApplicationStatus.UNDER_YGK_REVIEW.equals(application.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Application must be in UNDER_YGK_REVIEW status (current: " + application.getStatus() + ")");
+        }
+
+        User actor = authenticatedUserService.getCurrentUser();
+        String fromStatus = application.getStatus();
+        application.setStatus(ApplicationStatus.FROM_YGK);
+        applicationRepository.save(application);
+        saveHistory(application, fromStatus, ApplicationStatus.FROM_YGK, actor,
+                "Returned to OIDB by YGK: YKS score missing");
+        return toAdminResponse(application);
+    }
+
+    /**
+     * Returns student profile info for a YGK-reviewed application.
+     */
+    @Transactional(readOnly = true)
+    public com.utms.student.dto.StudentProfileResponse getStudentProfile(Long applicationId) {
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Application not found: " + applicationId));
+        com.utms.student.Student student = application.getStudent();
+        return new com.utms.student.dto.StudentProfileResponse(
+                student.getUser().getFirstName() + " " + student.getUser().getLastName(),
+                student.getUser().getEmail(),
+                student.getNationality(),
+                student.getIdentityDocumentType(),
+                student.getTcIdentityNumber(),
+                student.getPassportNumber(),
+                student.getDateOfBirth(),
+                student.getIdentitySerialNo(),
+                student.getPassportExpirationDate(),
+                student.getCurrentProgram(),
+                student.getCurrentUniversity()
+        );
     }
 
     /**
@@ -233,7 +299,8 @@ public class YgkService {
                 user.getEmail(),
                 student.getDepartment(),
                 student.getFaculty(),
-                student.getGpa()
+                student.getGpa(),
+                student.getYksScore()
         );
     }
 
@@ -247,7 +314,9 @@ public class YgkService {
                 e.getYdyoDecision(),
                 e.getYdyoNote(),
                 e.getCreatedAt(),
-                e.getUpdatedAt()
+                e.getUpdatedAt(),
+                e.isDeptConditionsVerified(),
+                e.getLanguageScore()
         );
     }
 }

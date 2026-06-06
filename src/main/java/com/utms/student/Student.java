@@ -58,6 +58,9 @@ public class Student extends BaseEntity {
     @Column(name = "current_university", length = 255)
     private String currentUniversity;
 
+    @Column(name = "yks_score", precision = 6, scale = 2)
+    private BigDecimal yksScore;
+
     public Student() {}
 
     public User getUser() {
@@ -170,5 +173,13 @@ public class Student extends BaseEntity {
 
     public void setCurrentUniversity(String currentUniversity) {
         this.currentUniversity = currentUniversity;
+    }
+
+    public BigDecimal getYksScore() {
+        return yksScore;
+    }
+
+    public void setYksScore(BigDecimal yksScore) {
+        this.yksScore = yksScore;
     }
 }

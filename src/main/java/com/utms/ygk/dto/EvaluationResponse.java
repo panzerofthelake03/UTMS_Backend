@@ -14,13 +14,16 @@ public class EvaluationResponse {
     private String ydyoNote;
     private Instant createdAt;
     private Instant updatedAt;
+    private boolean deptConditionsVerified;
+    private BigDecimal languageScore;
 
     public EvaluationResponse() {}
 
     public EvaluationResponse(Long id, Long applicationId, BigDecimal compositeScore,
                               String evaluatorNote, String decision,
                               String ydyoDecision, String ydyoNote,
-                              Instant createdAt, Instant updatedAt) {
+                              Instant createdAt, Instant updatedAt,
+                              boolean deptConditionsVerified, BigDecimal languageScore) {
         this.id = id;
         this.applicationId = applicationId;
         this.compositeScore = compositeScore;
@@ -30,6 +33,8 @@ public class EvaluationResponse {
         this.ydyoNote = ydyoNote;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.deptConditionsVerified = deptConditionsVerified;
+        this.languageScore = languageScore;
     }
 
     public Long getId() { return id; }
@@ -58,4 +63,10 @@ public class EvaluationResponse {
 
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }
+
+    public boolean isDeptConditionsVerified() { return deptConditionsVerified; }
+    public void setDeptConditionsVerified(boolean deptConditionsVerified) { this.deptConditionsVerified = deptConditionsVerified; }
+
+    public BigDecimal getLanguageScore() { return languageScore; }
+    public void setLanguageScore(BigDecimal languageScore) { this.languageScore = languageScore; }
 }

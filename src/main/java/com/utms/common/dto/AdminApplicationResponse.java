@@ -26,6 +26,7 @@ public class AdminApplicationResponse {
     private String department;
     private String faculty;
     private BigDecimal gpa;
+    private BigDecimal yksScore;
 
     public AdminApplicationResponse() {}
 
@@ -33,7 +34,8 @@ public class AdminApplicationResponse {
                                     Instant submittedAt, Instant createdAt, Instant updatedAt,
                                     Long studentId, String studentNumber,
                                     String studentFirstName, String studentLastName, String studentEmail,
-                                    String department, String faculty, BigDecimal gpa) {
+                                    String department, String faculty, BigDecimal gpa,
+                                    BigDecimal yksScore) {
         this.id = id;
         this.status = status;
         this.term = term;
@@ -49,6 +51,7 @@ public class AdminApplicationResponse {
         this.department = department;
         this.faculty = faculty;
         this.gpa = gpa;
+        this.yksScore = yksScore;
     }
 
     public Long getId() { return id; }
@@ -95,4 +98,7 @@ public class AdminApplicationResponse {
 
     public BigDecimal getGpa() { return gpa; }
     public void setGpa(BigDecimal gpa) { this.gpa = gpa; }
+
+    public BigDecimal getYksScore() { return yksScore; }
+    public void setYksScore(BigDecimal yksScore) { this.yksScore = yksScore; }
 }

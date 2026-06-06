@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
@@ -108,7 +107,8 @@ public class DeanService {
                 app.getSubmittedAt(), app.getCreatedAt(), app.getUpdatedAt(),
                 student.getId(), student.getStudentNumber(),
                 user.getFirstName(), user.getLastName(), user.getEmail(),
-                student.getDepartment(), student.getFaculty(), student.getGpa()
+                student.getDepartment(), student.getFaculty(), student.getGpa(),
+                student.getYksScore()
         );
     }
 }
