@@ -1,3 +1,6 @@
+Hayır, getStudentProfile metodunun kapanış parantezi eksik. return bloğunun sonunda ) var ama metodun } kapanışı yok, direkt finalizeList'in javadoc'u başlamış. Tam hali:
+
+
 package com.utms.ygk;
 
 import com.utms.application.Application;
@@ -155,7 +158,7 @@ public class YgkService {
     }
 
     /**
-     * Returns an application from UNDER_YGK_REVIEW back to UNDER_OIDB_REVIEW
+     * Returns an application from UNDER_YGK_REVIEW back to FROM_YGK
      * (e.g. when YKS score is missing and OIDB must record it).
      */
     @Transactional
@@ -200,6 +203,26 @@ public class YgkService {
                 student.getCurrentProgram(),
                 student.getCurrentUniversity()
         );
+    }
+
+    /**
+     * MTL-1C — YGK finalizes the list by confirming all PENDING_DEAN_APPROVAL applications
+     * are ready for final approval. Returns the count of finalized entries.
+     */
+    @Transactional
+    public int finalizeList() {
+        List<Application> apps = applicationRepository.findByStatusInOrderByCreatedAtAsc(
+                List.of(ApplicationStatus.PENDING_DEAN_APPROVAL));
+        if (apps.isEmpty()) {
+            throw new ResponseStatusException(org.springframework.http.HttpStatus.CONFLICT,
+                    "No applications are in PENDING_DEAN_APPROVAL status.");
+        }
+        User actor = authenticatedUserService.getCurrentUser();
+        for (Application app : apps) {
+            saveHistory(app, ApplicationStatus.PENDING_DEAN_APPROVAL, ApplicationStatus.PENDING_DEAN_APPROVAL,
+                    actor, "YGK list finalized — forwarded to ÖİDB for secondary review");
+        }
+        return apps.size();
     }
 
     /**

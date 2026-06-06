@@ -99,4 +99,13 @@ public class YgkController {
     public ResponseEntity<ApiResponse<AdminApplicationResponse>> sendBackToOidb(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(ygkService.sendBackToOidb(id)));
     }
+
+    /**
+     * POST /api/ygk/finalize-list
+     * MTL-1C — YGK confirms the placement list is ready for secondary review.
+     */
+    @PostMapping("/finalize-list")
+    public ResponseEntity<ApiResponse<Integer>> finalizeList() {
+        return ResponseEntity.ok(ApiResponse.success(ygkService.finalizeList()));
+    }
 }
