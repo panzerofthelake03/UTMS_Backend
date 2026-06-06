@@ -4,7 +4,9 @@ import com.utms.application.Application;
 import com.utms.common.security.AuthenticatedUserService;
 import com.utms.notification.dto.NotificationResponse;
 import com.utms.notification.dto.UnreadCountResponse;
+import com.utms.support.SupportTicket;
 import com.utms.user.User;
+import com.utms.user.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,11 +20,37 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final AuthenticatedUserService authenticatedUserService;
+    private final UserRepository userRepository;
 
     public NotificationService(NotificationRepository notificationRepository,
-                               AuthenticatedUserService authenticatedUserService) {
+                               AuthenticatedUserService authenticatedUserService,
+                               UserRepository userRepository) {
         this.notificationRepository = notificationRepository;
         this.authenticatedUserService = authenticatedUserService;
+        this.userRepository = userRepository;
+    }
+
+    /**
+     * Called by SupportTicketService when a student submits a contact message.
+     * Creates a notification for every active OIDB user.
+     */
+    @Transactional
+    public void createSupportTicketNotification(SupportTicket ticket) {
+        User sender = ticket.getStudent().getUser();
+        String title = "New Support Ticket: " + ticket.getSubject();
+        String message = String.format("From: %s %s (%s) | Category: %s\n\n%s",
+                sender.getFirstName(), sender.getLastName(), sender.getEmail(),
+                ticket.getCategory(), ticket.getMessage());
+
+        for (User oidbUser : userRepository.findAllByRoleName("ROLE_OIDB")) {
+            Notification notification = new Notification();
+            notification.setRecipient(oidbUser);
+            notification.setNotificationType("SUPPORT_TICKET");
+            notification.setTitle(title);
+            notification.setMessage(message);
+            notification.setSentAt(Instant.now());
+            notificationRepository.save(notification);
+        }
     }
 
     /**
